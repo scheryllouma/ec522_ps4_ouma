@@ -1,0 +1,61 @@
+---
+title: "Problem Set 4"
+author: "Scheryll Ouma"
+date: today
+format:
+  html:
+    toc: true
+    embed-resources: true
+execute:
+  warning: false
+  message: false
+---
+
+**GitHub repo:** <https://github.com/scheryllouma/ec522_ps4_ouma>
+
+```{r}
+#| label: setup
+library(tidyverse)
+library(fpp3)
+library(BVAR)
+```
+
+## ARIMA vs. ETS
+
+### 2.1 The data
+
+```{r}
+#| label: liquor-data
+liquor_raw <- read_csv("data/MRTSSM4453USN.csv",
+                       na = ".",
+                       col_types = cols(
+                         observation_date = col_date(format = "%Y-%m-%d"),
+                         MRTSSM4453USN = col_double()
+                       ))
+
+liquor <- liquor_raw |>
+  transmute(Month = yearmonth(observation_date), sales = MRTSSM4453USN) |>
+  as_tsibble(index = Month) |>
+  filter(Month <= yearmonth("2019 Dec"))
+
+has_gaps(liquor)
+```
+
+```{r}
+#| label: liquor-plots
+liquor |>
+  autoplot(sales) +
+  labs(title = "U.S. Retail Sales: Beer, Wine, and Liquor Stores (NSA)",
+       x = "Month", y = "Millions of dollars")
+
+liquor |>
+  gg_season(log(sales), labels = "both") +
+  labs(title = "Seasonal Plot: log of Liquor Store Sales",
+       x = "Month", y = "log(sales)")
+```
+
+**Trend.** Sales trend steadily upward, from about \$1.4 billion a month in early 1992 to over \$6 billion in December 2019. That is roughly a 4.4-fold increase in nominal terms, or about 5% per year. The trend is remarkably smooth: there is only a brief flattening around 2002–03, and the 2008–09 recession barely dents it.
+
+**Seasonality.** The seasonal pattern is very strong and very stable. **December is by far the highest month**, about 30% above an average month in log terms, because of holiday spending. **January and February are the lowest**, roughly 15% below average, partly because they follow the holidays and February is short. Summer months, especially July and also May and August, are moderately high. March, April and September are below average. The lines for different years in the season plot are almost parallel, so the seasonal shape barely changes over time.
+
+**Seasonal swings and logs.** In the raw data the seasonal swings **grow with the level of the series**. The December spike is about \$650 million above a typical month in 1992 but about \$1.5 billion above it in 2019. This means the seasonality is **multiplicative**: it is a roughly constant *percentage* of the level rather than a constant dollar amount. Taking logs turns multiplicative seasonality into additive seasonality with a roughly constant amplitude. That is why the season plot of log(sales) shows parallel lines of similar height, and why it makes sense to model log(sales) rather than sales.
