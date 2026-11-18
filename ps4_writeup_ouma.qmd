@@ -95,3 +95,17 @@ liquor_fit |>
 The chosen ARIMA has p + q + P + Q = 1 + 2 + 2 + 1 = **6** estimated AR and MA coefficients, so `dof = 6`. The Ljung–Box statistic at lag 24 is about **120.4**, with a p-value of essentially zero, so we strongly **reject the null that the residuals are white noise**. The residual ACF has several spikes outside the significance bands, and the time plot shows some large one-month residuals, although the residuals look roughly normal with a fairly stable variance.
 
 So some structure is left over. A likely source is **calendar effects** that a standard ARIMA cannot capture. These include the number of Fridays and Saturdays in a month (trading-day effects), and the timing of moving holidays such as Easter and Thanksgiving, both of which matter for a not-seasonally-adjusted retail series. As the problem set notes, failing this test tells us the model could be improved, not that it will forecast badly. The horse race in 2.3 is the real test.
+
+### 2.3 The horse race
+
+The TS-CV runs `stretch_tsibble(.init = 120, .step = 1)` on the 336 months from January 1992 to December 2019. This creates 336 − 120 + 1 = 217 training samples. Dropping the last one, which ends in December 2019 and has no actual value to forecast, leaves **216 forecast origins**. The first training sample runs from January 1992 to December 2001, so the **first forecast is for January 2002**. The last training sample ends in November 2019, so the **last forecast is for December 2019**.
+
+```{r}
+#| label: liquor-acc
+liquor_acc <- readRDS("results/liquor_acc.rds")
+liquor_acc |> knitr::kable(digits = 2)
+```
+
+**ARIMA forecasts most accurately on both metrics.** Its RMSE is \$81.4 million, against \$94.4 million for ETS and \$161 million for the seasonal naïve benchmark. Its MAE is \$65.7 million, against \$72.3 million and \$137 million. **The two metrics agree** on the full ranking: ARIMA first, then ETS, then the seasonal naïve.
+
+ARIMA's RMSE is about 14% lower than ETS's and about 50% lower than the benchmark's. The seasonal naïve does badly mainly because it ignores the upward trend. Forecasting this month with the same month last year misses a full year of growth, so its errors are persistently positive (it systematically under-forecasts).
