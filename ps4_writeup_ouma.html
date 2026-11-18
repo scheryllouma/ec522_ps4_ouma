@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Scheryll Ouma">
-<meta name="dcterms.date" content="2026-11-17">
+<meta name="dcterms.date" content="2026-11-18">
 
 <title>Problem Set 4</title>
 <style>
@@ -2217,6 +2217,7 @@ vertical-align: -.125em;
   <li><a href="#the-data" id="toc-the-data" class="nav-link" data-scroll-target="#the-data">2.1 The data</a></li>
   <li><a href="#fit-both-models" id="toc-fit-both-models" class="nav-link" data-scroll-target="#fit-both-models">2.2 Fit both models</a></li>
   <li><a href="#the-horse-race" id="toc-the-horse-race" class="nav-link" data-scroll-target="#the-horse-race">2.3 The horse race</a></li>
+  <li><a href="#are-the-differences-significant" id="toc-are-the-differences-significant" class="nav-link" data-scroll-target="#are-the-differences-significant">2.4 Are the differences significant?</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -2242,7 +2243,7 @@ vertical-align: -.125em;
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 17, 2026</p>
+      <p class="date">November 18, 2026</p>
     </div>
   </div>
   
@@ -2428,6 +2429,54 @@ Transformation: log(sales)
 </div>
 <p><strong>ARIMA forecasts most accurately on both metrics.</strong> Its RMSE is $81.4 million, against $94.4 million for ETS and $161 million for the seasonal naïve benchmark. Its MAE is $65.7 million, against $72.3 million and $137 million. <strong>The two metrics agree</strong> on the full ranking: ARIMA first, then ETS, then the seasonal naïve.</p>
 <p>ARIMA’s RMSE is about 14% lower than ETS’s and about 50% lower than the benchmark’s. The seasonal naïve does badly mainly because it ignores the upward trend. Forecasting this month with the same month last year misses a full year of growth, so its errors are persistently positive (it systematically under-forecasts).</p>
+</section>
+<section id="are-the-differences-significant" class="level3">
+<h3 class="anchored" data-anchor-id="are-the-differences-significant">2.4 Are the differences significant?</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>liquor_dm <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;results/liquor_dm.rds&quot;</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>liquor_dm<span class="sc">$</span>arima_ets</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Diebold-Mariano Test
+
+data:  liquor_errs$arimaliquor_errs$ets
+DM = -2.9062, Forecast horizon = 1, Loss function power = 2, p-value =
+0.004042
+alternative hypothesis: two.sided</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>liquor_dm<span class="sc">$</span>arima_snaive</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Diebold-Mariano Test
+
+data:  liquor_errs$arimaliquor_errs$snaive
+DM = -10.755, Forecast horizon = 1, Loss function power = 2, p-value &lt;
+2.2e-16
+alternative hypothesis: two.sided</code></pre>
+</div>
+</div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Comparison</th>
+<th style="text-align: right;">DM statistic</th>
+<th style="text-align: right;">p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">ARIMA vs. ETS</td>
+<td style="text-align: right;">−2.906</td>
+<td style="text-align: right;">0.004</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ARIMA vs. seasonal naïve</td>
+<td style="text-align: right;">−10.755</td>
+<td style="text-align: right;">&lt; 2.2e-16</td>
+</tr>
+</tbody>
+</table>
+<p>In both tests the DM statistic is negative, which means the first model (ARIMA) has smaller squared forecast errors. We <strong>reject the null of equal accuracy between ARIMA and ETS at the 1% level</strong> (p ≈ 0.004), and the rejection against the seasonal random walk is overwhelming (p &lt; 2.2e-16). ARIMA’s advantage over 216 out-of-sample months is therefore very unlikely to be luck. <strong>If I were the liquor store chain, I would use the ARIMA model</strong> to forecast next month’s sales: its residuals are not perfectly white noise, but it forecasts significantly better than both alternatives.</p>
 </section>
 </section>
 

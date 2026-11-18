@@ -77,3 +77,27 @@ liquor_acc <- liquor_cv_fc |>
   accuracy(liquor, measures = list(RMSE = RMSE, MAE = MAE))
 liquor_acc
 saveRDS(liquor_acc, "results/liquor_acc.rds")
+
+# ---- 2.4 Diebold–Mariano tests ----
+liquor_errs <- liquor_cv_fc |>
+  as_tibble() |>
+  left_join(as_tibble(liquor) |> select(Month, actual = sales),
+            by = "Month") |>
+  mutate(e = actual - .mean) |>
+  select(Month, .model, e) |>
+  pivot_wider(names_from = .model, values_from = e)
+
+# ARIMA vs. ETS
+dm_arima_ets <- forecast::dm.test(liquor_errs$arima, liquor_errs$ets,
+                                  h = 1, power = 2)
+dm_arima_ets
+
+# ARIMA vs. seasonal random walk benchmark
+dm_arima_snaive <- forecast::dm.test(liquor_errs$arima, liquor_errs$snaive,
+                                     h = 1, power = 2)
+dm_arima_snaive
+
+# Save for the write-up
+saveRDS(liquor_errs, "results/liquor_errs.rds")
+saveRDS(list(arima_ets = dm_arima_ets, arima_snaive = dm_arima_snaive),
+        "results/liquor_dm.rds")

@@ -109,3 +109,19 @@ liquor_acc |> knitr::kable(digits = 2)
 **ARIMA forecasts most accurately on both metrics.** Its RMSE is \$81.4 million, against \$94.4 million for ETS and \$161 million for the seasonal naïve benchmark. Its MAE is \$65.7 million, against \$72.3 million and \$137 million. **The two metrics agree** on the full ranking: ARIMA first, then ETS, then the seasonal naïve.
 
 ARIMA's RMSE is about 14% lower than ETS's and about 50% lower than the benchmark's. The seasonal naïve does badly mainly because it ignores the upward trend. Forecasting this month with the same month last year misses a full year of growth, so its errors are persistently positive (it systematically under-forecasts).
+
+### 2.4 Are the differences significant?
+
+```{r}
+#| label: liquor-dm
+liquor_dm <- readRDS("results/liquor_dm.rds")
+liquor_dm$arima_ets
+liquor_dm$arima_snaive
+```
+
+| Comparison | DM statistic | p-value |
+|:---|---:|---:|
+| ARIMA vs. ETS | −2.906 | 0.004 |
+| ARIMA vs. seasonal naïve | −10.755 | < 2.2e-16 |
+
+In both tests the DM statistic is negative, which means the first model (ARIMA) has smaller squared forecast errors. We **reject the null of equal accuracy between ARIMA and ETS at the 1% level** (p ≈ 0.004), and the rejection against the seasonal random walk is overwhelming (p < 2.2e-16). ARIMA's advantage over 216 out-of-sample months is therefore very unlikely to be luck. **If I were the liquor store chain, I would use the ARIMA model** to forecast next month's sales: its residuals are not perfectly white noise, but it forecasts significantly better than both alternatives.
