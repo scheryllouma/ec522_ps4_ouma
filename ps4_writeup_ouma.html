@@ -2216,6 +2216,7 @@ vertical-align: -.125em;
   <ul class="collapse">
   <li><a href="#the-data" id="toc-the-data" class="nav-link" data-scroll-target="#the-data">2.1 The data</a></li>
   <li><a href="#fit-both-models" id="toc-fit-both-models" class="nav-link" data-scroll-target="#fit-both-models">2.2 Fit both models</a></li>
+  <li><a href="#the-horse-race" id="toc-the-horse-race" class="nav-link" data-scroll-target="#the-horse-race">2.3 The horse race</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -2385,6 +2386,48 @@ Transformation: log(sales)
 </div>
 <p>The chosen ARIMA has p + q + P + Q = 1 + 2 + 2 + 1 = <strong>6</strong> estimated AR and MA coefficients, so <code>dof = 6</code>. The Ljung–Box statistic at lag 24 is about <strong>120.4</strong>, with a p-value of essentially zero, so we strongly <strong>reject the null that the residuals are white noise</strong>. The residual ACF has several spikes outside the significance bands, and the time plot shows some large one-month residuals, although the residuals look roughly normal with a fairly stable variance.</p>
 <p>So some structure is left over. A likely source is <strong>calendar effects</strong> that a standard ARIMA cannot capture. These include the number of Fridays and Saturdays in a month (trading-day effects), and the timing of moving holidays such as Easter and Thanksgiving, both of which matter for a not-seasonally-adjusted retail series. As the problem set notes, failing this test tells us the model could be improved, not that it will forecast badly. The horse race in 2.3 is the real test.</p>
+</section>
+<section id="the-horse-race" class="level3">
+<h3 class="anchored" data-anchor-id="the-horse-race">2.3 The horse race</h3>
+<p>The TS-CV runs <code>stretch_tsibble(.init = 120, .step = 1)</code> on the 336 months from January 1992 to December 2019. This creates 336 − 120 + 1 = 217 training samples. Dropping the last one, which ends in December 2019 and has no actual value to forecast, leaves <strong>216 forecast origins</strong>. The first training sample runs from January 1992 to December 2001, so the <strong>first forecast is for January 2002</strong>. The last training sample ends in November 2019, so the <strong>last forecast is for December 2019</strong>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>liquor_acc <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;results/liquor_acc.rds&quot;</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>liquor_acc <span class="sc">|&gt;</span> knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">.model</th>
+<th style="text-align: left;">.type</th>
+<th style="text-align: right;">RMSE</th>
+<th style="text-align: right;">MAE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">arima</td>
+<td style="text-align: left;">Test</td>
+<td style="text-align: right;">81.43</td>
+<td style="text-align: right;">65.65</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ets</td>
+<td style="text-align: left;">Test</td>
+<td style="text-align: right;">94.35</td>
+<td style="text-align: right;">72.31</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">snaive</td>
+<td style="text-align: left;">Test</td>
+<td style="text-align: right;">161.26</td>
+<td style="text-align: right;">136.63</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p><strong>ARIMA forecasts most accurately on both metrics.</strong> Its RMSE is $81.4 million, against $94.4 million for ETS and $161 million for the seasonal naïve benchmark. Its MAE is $65.7 million, against $72.3 million and $137 million. <strong>The two metrics agree</strong> on the full ranking: ARIMA first, then ETS, then the seasonal naïve.</p>
+<p>ARIMA’s RMSE is about 14% lower than ETS’s and about 50% lower than the benchmark’s. The seasonal naïve does badly mainly because it ignores the upward trend. Forecasting this month with the same month last year misses a full year of growth, so its errors are persistently positive (it systematically under-forecasts).</p>
 </section>
 </section>
 
