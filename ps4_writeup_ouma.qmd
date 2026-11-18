@@ -59,3 +59,39 @@ liquor |>
 **Seasonality.** The seasonal pattern is very strong and very stable. **December is by far the highest month**, about 30% above an average month in log terms, because of holiday spending. **January and February are the lowest**, roughly 15% below average, partly because they follow the holidays and February is short. Summer months, especially July and also May and August, are moderately high. March, April and September are below average. The lines for different years in the season plot are almost parallel, so the seasonal shape barely changes over time.
 
 **Seasonal swings and logs.** In the raw data the seasonal swings **grow with the level of the series**. The December spike is about \$650 million above a typical month in 1992 but about \$1.5 billion above it in 2019. This means the seasonality is **multiplicative**: it is a roughly constant *percentage* of the level rather than a constant dollar amount. Taking logs turns multiplicative seasonality into additive seasonality with a roughly constant amplitude. That is why the season plot of log(sales) shows parallel lines of similar height, and why it makes sense to model log(sales) rather than sales.
+
+### 2.2 Fit both models
+
+```{r}
+#| label: liquor-fit
+liquor_fit <- liquor |>
+  model(arima = ARIMA(log(sales)),
+        ets   = ETS(log(sales)))
+
+liquor_fit |> select(arima) |> report()
+liquor_fit |> select(ets) |> report()
+```
+
+**ARIMA.** `fable` chose an **ARIMA(1,0,2)(2,1,1)[12] with drift** for log(sales). The series was **seasonally differenced once (D = 1) but not first-differenced (d = 0)**. So the model is for log(sales~t~) − log(sales~t−12~), which is approximately the **year-over-year growth rate** of sales. That growth rate is modelled as stationary, with one regular AR term, two regular MA terms, two seasonal AR terms and one seasonal MA term. The "drift" (constant) means the seasonally differenced series has a non-zero mean. The implied average annual growth is c / [(1 − φ~1~)(1 − Φ~1~ − Φ~2~)] = 0.00359 / [(1 − 0.895)(1 − 0.368 + 0.233)] ≈ 0.04, about **4% per year**. Combined with the seasonal difference, this gives a steady upward trend in log sales.
+
+**ETS.** `fable` chose an **ETS(A,A,A)** for log(sales). The three letters mean:
+
+- **Error = A (additive):** random shocks are added to the (log) level rather than scaled by it.
+- **Trend = A (additive, not damped):** the log level has a linear slope. Since the model is in logs, this means a roughly constant *growth rate*.
+- **Seasonal = A (additive):** seasonal effects are added to the log level. In the original dollar units they are multiplicative, i.e. constant percentages, which matches what we saw in the plots.
+
+The smoothing parameters are α = 0.33, β ≈ 0.008 and γ ≈ 0.0002. Because β and γ are almost zero, the slope and the seasonal pattern are nearly fixed over time, which is consistent with the very stable season plot.
+
+```{r}
+#| label: liquor-resid
+liquor_fit |> select(arima) |> gg_tsresiduals()
+
+liquor_fit |>
+  select(arima) |>
+  augment() |>
+  features(.innov, ljung_box, lag = 24, dof = 6)
+```
+
+The chosen ARIMA has p + q + P + Q = 1 + 2 + 2 + 1 = **6** estimated AR and MA coefficients, so `dof = 6`. The Ljung–Box statistic at lag 24 is about **120.4**, with a p-value of essentially zero, so we strongly **reject the null that the residuals are white noise**. The residual ACF has several spikes outside the significance bands, and the time plot shows some large one-month residuals, although the residuals look roughly normal with a fairly stable variance.
+
+So some structure is left over. A likely source is **calendar effects** that a standard ARIMA cannot capture. These include the number of Fridays and Saturdays in a month (trading-day effects), and the timing of moving holidays such as Easter and Thanksgiving, both of which matter for a not-seasonally-adjusted retail series. As the problem set notes, failing this test tells us the model could be improved, not that it will forecast badly. The horse race in 2.3 is the real test.
