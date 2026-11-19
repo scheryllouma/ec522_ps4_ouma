@@ -2219,6 +2219,7 @@ vertical-align: -.125em;
   <li><a href="#the-horse-race" id="toc-the-horse-race" class="nav-link" data-scroll-target="#the-horse-race">2.3 The horse race</a></li>
   <li><a href="#are-the-differences-significant" id="toc-are-the-differences-significant" class="nav-link" data-scroll-target="#are-the-differences-significant">2.4 Are the differences significant?</a></li>
   </ul></li>
+  <li><a href="#forecast-combination" id="toc-forecast-combination" class="nav-link" data-scroll-target="#forecast-combination">Forecast Combination</a></li>
   </ul>
 </nav>
 </div>
@@ -2478,6 +2479,58 @@ alternative hypothesis: two.sided</code></pre>
 </table>
 <p>In both tests the DM statistic is negative, which means the first model (ARIMA) has smaller squared forecast errors. We <strong>reject the null of equal accuracy between ARIMA and ETS at the 1% level</strong> (p ≈ 0.004), and the rejection against the seasonal random walk is overwhelming (p &lt; 2.2e-16). ARIMA’s advantage over 216 out-of-sample months is therefore very unlikely to be luck. <strong>If I were the liquor store chain, I would use the ARIMA model</strong> to forecast next month’s sales: its residuals are not perfectly white noise, but it forecasts significantly better than both alternatives.</p>
 </section>
+</section>
+<section id="forecast-combination" class="level2">
+<h2 class="anchored" data-anchor-id="forecast-combination">Forecast Combination</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>combo_acc <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;results/combo_acc.rds&quot;</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>combo_acc <span class="sc">|&gt;</span> knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">.model</th>
+<th style="text-align: left;">.type</th>
+<th style="text-align: right;">RMSE</th>
+<th style="text-align: right;">MAE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">arima</td>
+<td style="text-align: left;">Test</td>
+<td style="text-align: right;">81.43</td>
+<td style="text-align: right;">65.65</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">combo</td>
+<td style="text-align: left;">Test</td>
+<td style="text-align: right;">85.19</td>
+<td style="text-align: right;">66.77</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ets</td>
+<td style="text-align: left;">Test</td>
+<td style="text-align: right;">94.35</td>
+<td style="text-align: right;">72.31</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">snaive</td>
+<td style="text-align: left;">Test</td>
+<td style="text-align: right;">161.26</td>
+<td style="text-align: right;">136.63</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>liquor_errs <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;results/liquor_errs.rds&quot;</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cor</span>(liquor_errs<span class="sc">$</span>arima, liquor_errs<span class="sc">$</span>ets)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.8782931</code></pre>
+</div>
+</div>
+<p><strong>3a.</strong> The equal-weight combination (RMSE 85.2, MAE 66.8) sits <strong>between its two components</strong>. It is clearly better than ETS (RMSE 94.4, MAE 72.3) but <strong>slightly worse than ARIMA alone</strong> (RMSE 81.4, MAE 65.7). On MAE it comes close to ARIMA (66.8 vs. 65.7), but it does not beat it on either metric. It still easily beats the seasonal naïve benchmark.</p>
+<p><strong>3b.</strong> The correlation between the ARIMA and ETS forecast errors is <strong>0.878</strong>, which is high: the two models tend to make the same mistakes in the same months. Averaging two forecasts reduces error mainly when their mistakes partly cancel out, and with errors this similar there is little to cancel. At the same time, the DM test in 2.4 showed that ARIMA is <em>significantly</em> more accurate than ETS. Combining helps most when the models are similarly accurate and their errors are not strongly correlated, and neither condition holds here. Giving equal weight to a clearly worse forecast whose errors mostly duplicate ARIMA’s pulls the combination away from the better model, so it cannot beat ARIMA. Even so, the combination is a robust choice: it is much better than the weaker model and only a little worse than the best one, and it does not require knowing in advance which model will win.</p>
 </section>
 
 </main>

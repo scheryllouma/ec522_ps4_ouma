@@ -101,3 +101,19 @@ dm_arima_snaive
 saveRDS(liquor_errs, "results/liquor_errs.rds")
 saveRDS(list(arima_ets = dm_arima_ets, arima_snaive = dm_arima_snaive),
         "results/liquor_dm.rds")
+# =============================================================================
+# Part 3 – Forecast Combination
+# =============================================================================
+
+# ---- 3a Equal-weight combination of ARIMA and ETS ----
+liquor_combo_fc <- liquor_cv_fit |>
+  mutate(combo = (arima + ets) / 2) |>
+  forecast(h = 1)
+
+combo_acc <- liquor_combo_fc |>
+  accuracy(liquor, measures = list(RMSE = RMSE, MAE = MAE))
+combo_acc
+saveRDS(combo_acc, "results/combo_acc.rds")
+
+# ---- 3b Correlation of ARIMA and ETS forecast errors ----
+cor(liquor_errs$arima, liquor_errs$ets)
