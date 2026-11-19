@@ -2220,6 +2220,10 @@ vertical-align: -.125em;
   <li><a href="#are-the-differences-significant" id="toc-are-the-differences-significant" class="nav-link" data-scroll-target="#are-the-differences-significant">2.4 Are the differences significant?</a></li>
   </ul></li>
   <li><a href="#forecast-combination" id="toc-forecast-combination" class="nav-link" data-scroll-target="#forecast-combination">Forecast Combination</a></li>
+  <li><a href="#var-vs.-bvar" id="toc-var-vs.-bvar" class="nav-link" data-scroll-target="#var-vs.-bvar">VAR vs. BVAR</a>
+  <ul class="collapse">
+  <li><a href="#data-and-ts-cv-setup" id="toc-data-and-ts-cv-setup" class="nav-link" data-scroll-target="#data-and-ts-cv-setup">4.1 Data and TS-CV setup</a></li>
+  </ul></li>
   </ul>
 </nav>
 </div>
@@ -2531,6 +2535,13 @@ alternative hypothesis: two.sided</code></pre>
 </div>
 <p><strong>3a.</strong> The equal-weight combination (RMSE 85.2, MAE 66.8) sits <strong>between its two components</strong>. It is clearly better than ETS (RMSE 94.4, MAE 72.3) but <strong>slightly worse than ARIMA alone</strong> (RMSE 81.4, MAE 65.7). On MAE it comes close to ARIMA (66.8 vs. 65.7), but it does not beat it on either metric. It still easily beats the seasonal naïve benchmark.</p>
 <p><strong>3b.</strong> The correlation between the ARIMA and ETS forecast errors is <strong>0.878</strong>, which is high: the two models tend to make the same mistakes in the same months. Averaging two forecasts reduces error mainly when their mistakes partly cancel out, and with errors this similar there is little to cancel. At the same time, the DM test in 2.4 showed that ARIMA is <em>significantly</em> more accurate than ETS. Combining helps most when the models are similarly accurate and their errors are not strongly correlated, and neither condition holds here. Giving equal weight to a clearly worse forecast whose errors mostly duplicate ARIMA’s pulls the combination away from the better model, so it cannot beat ARIMA. Even so, the combination is a robust choice: it is much better than the weaker model and only a little worse than the best one, and it does not require knowing in advance which model will win.</p>
+</section>
+<section id="var-vs.-bvar" class="level2">
+<h2 class="anchored" data-anchor-id="var-vs.-bvar">VAR vs. BVAR</h2>
+<section id="data-and-ts-cv-setup" class="level3">
+<h3 class="anchored" data-anchor-id="data-and-ts-cv-setup">4.1 Data and TS-CV setup</h3>
+<p>The eight quarterly series from FRED-QD (September 2026 vintage) run from 1960 Q1 to 2019 Q4, giving a 240 × 8 matrix. The first training sample is 1960 Q1–1989 Q4 (120 quarters) and the last is 1960 Q1–2019 Q3. The forecast origins 120 to 239 give <strong>120 one-quarter-ahead forecasts for each variable</strong>. The <strong>first forecast is for 1990 Q1</strong> and the <strong>last is for 2019 Q4</strong>. (FRED-QD dates each quarter by its last month, so 1990 Q1 appears as March 1, 1990.)</p>
+</section>
 </section>
 
 </main>

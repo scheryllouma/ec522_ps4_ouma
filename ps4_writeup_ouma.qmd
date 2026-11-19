@@ -140,3 +140,9 @@ cor(liquor_errs$arima, liquor_errs$ets)
 **3a.** The equal-weight combination (RMSE 85.2, MAE 66.8) sits **between its two components**. It is clearly better than ETS (RMSE 94.4, MAE 72.3) but **slightly worse than ARIMA alone** (RMSE 81.4, MAE 65.7). On MAE it comes close to ARIMA (66.8 vs. 65.7), but it does not beat it on either metric. It still easily beats the seasonal naïve benchmark.
 
 **3b.** The correlation between the ARIMA and ETS forecast errors is **0.878**, which is high: the two models tend to make the same mistakes in the same months. Averaging two forecasts reduces error mainly when their mistakes partly cancel out, and with errors this similar there is little to cancel. At the same time, the DM test in 2.4 showed that ARIMA is *significantly* more accurate than ETS. Combining helps most when the models are similarly accurate and their errors are not strongly correlated, and neither condition holds here. Giving equal weight to a clearly worse forecast whose errors mostly duplicate ARIMA's pulls the combination away from the better model, so it cannot beat ARIMA. Even so, the combination is a robust choice: it is much better than the weaker model and only a little worse than the best one, and it does not require knowing in advance which model will win.
+
+## VAR vs. BVAR
+
+### 4.1 Data and TS-CV setup
+
+The eight quarterly series from FRED-QD (September 2026 vintage) run from 1960 Q1 to 2019 Q4, giving a 240 × 8 matrix. The first training sample is 1960 Q1–1989 Q4 (120 quarters) and the last is 1960 Q1–2019 Q3. The forecast origins 120 to 239 give **120 one-quarter-ahead forecasts for each variable**. The **first forecast is for 1990 Q1** and the **last is for 2019 Q4**. (FRED-QD dates each quarter by its last month, so 1990 Q1 appears as March 1, 1990.)
