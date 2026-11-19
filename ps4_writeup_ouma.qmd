@@ -177,3 +177,74 @@ var_dm$cons    # consumption growth
 For **GDP growth** the DM statistic is 2.137 with a p-value of 0.035. For **consumption growth**, my second variable, it is 3.026 with a p-value of 0.003. The statistic is positive because the first model (VAR(4)) has the larger squared errors. We reject equal accuracy at the 5% level for GDP and at the 1% level for consumption: the BVAR is significantly more accurate than the unrestricted VAR(4) for both. So the gain from shrinkage in 4.3b is not just sampling noise, at least for these two series.
 
 This should also make us cautious about the rest of the table. Many of the other differences are much smaller, for example the BVAR vs. the VAR(1) for the 10-year yield (0.359 vs. 0.361), or the VAR(1) vs. the VAR(4) for inflation (0.208 vs. 0.207). Differences that small would almost certainly not be statistically significant, so we should not read them as real rankings. As an extra check I ran the same test for all eight variables: the BVAR's advantage over the VAR(4) is significant at 5% for GDP, consumption, employment and the funds rate, but not for investment, inflation, unemployment or the 10-year yield. So even in the comparison the BVAR "won" on every variable, the win is only clearly significant for about half of them.
+
+## Factor Model
+
+### 5.1 Data
+
+```{r}
+#| label: fredmd
+md_raw <- read_csv("data/fredmd_2026-09.csv", show_col_types = FALSE)
+tcode <- unlist(md_raw[1, -1])
+md <- md_raw[-1, ] |> mutate(date = as.Date(sasdate, "%m/%d/%Y"))
+
+transform_series <- function(x, code) {
+  d <- function(v) c(NA, diff(v))
+  switch(as.character(code),
+         "1" = x,                      # level
+         "2" = d(x),                   # first difference
+         "3" = d(d(x)),                # second difference
+         "4" = log(x),                 # log
+         "5" = 100 * d(log(x)),        # growth rate
+         "6" = 100 * d(d(log(x))),     # change in the growth rate
+         "7" = d(x / dplyr::lag(x) - 1))
+}
+
+fm <- map2_dfc(md[names(tcode)], tcode, transform_series) |>
+  mutate(date = md$date, .before = 1) |>
+  filter(date >= as.Date("1960-03-01"), date <= as.Date("2019-12-01"))
+fm <- fm[, colSums(is.na(fm)) == 0]
+dim(fm)
+
+tcode[c("INDPRO", "PAYEMS", "CPIAUCSL", "FEDFUNDS")]
+```
+
+The panel has 718 months (March 1960–December 2019) and 121 series plus the date column, as expected.
+
+- **INDPRO (code 5):** industrial production enters as its monthly growth rate, 100 × Δlog(IP).
+- **PAYEMS (code 5):** total nonfarm payroll employment also enters as its monthly growth rate, 100 × Δlog(PAYEMS).
+- **CPIAUCSL (code 6):** the CPI enters as the *change in* monthly inflation, 100 × Δ²log(CPI). McCracken and Ng treat price indices as integrated of order two, so inflation itself is differenced once more.
+- **FEDFUNDS (code 2):** the federal funds rate enters as its simple first difference, i.e. the monthly change in percentage points.
+
+The transformations for FEDFUNDS and INDPRO differ because INDPRO is an index that grows exponentially over time, so a log difference turns it into a stationary percentage growth rate. FEDFUNDS is already a rate measured in percent, with no exponential trend. A "growth rate of an interest rate" has no useful meaning, and logs behave badly when the rate is close to zero, as it was at the zero lower bound in 2009–2015 (a move from 0.07% to 0.14% would count as 100% "growth"). The natural transformation is therefore the change in percentage points.
+
+### 5.2 Estimating the factors
+
+```{r}
+#| label: pca
+Z <- fm |> select(-date) |> as.matrix()
+pc <- prcomp(scale(Z))
+summary(pc)$importance[, 1:5]
+```
+
+The first three factors together explain **29.5%** of the total variation in the 121 standardized series: 15.0% for the first, 7.4% for the second and 7.1% for the third. This matches the result from class.
+
+```{r}
+#| label: factor-plot
+F1 <- pc$x[, 1] * sign(cor(pc$x[, 1], fm$INDPRO))
+tibble(date = fm$date, F1 = F1) |>
+  ggplot(aes(date, F1)) +
+  geom_line() +
+  labs(title = "First Factor from FRED-MD", x = NULL, y = NULL) +
+  theme_minimal()
+```
+
+```{r}
+#| label: factor-loadings
+sort(abs(cor(pc$x[, 1], Z))[1, ], decreasing = TRUE)[1:8]
+sort(abs(cor(pc$x[, 2], Z))[1, ], decreasing = TRUE)[1:8]
+```
+
+**Factor 1 is a real-activity (business-cycle) factor.** The eight series most correlated with it are total nonfarm payrolls (PAYEMS), IP: manufacturing (IPMANSICS), goods-producing employment (USGOOD), total industrial production (INDPRO), manufacturing employment (MANEMP), IP: final products and nonindustrial supplies (IPFPNSS), manufacturing capacity utilization (CUMFNS) and durable-goods employment (DMANEMP), with correlations of about 0.78–0.84. These are the output and labor-market series in FRED-MD. The plot confirms this reading: the factor falls sharply in every NBER recession (1970, 1974–75, 1980, 1981–82, 1990–91, 2001 and especially 2008–09). Its lowest values are in May 1980, December 1974 and January 2009.
+
+**Factor 2 is an inflation (price) factor.** Its eight most correlated series are all price indices: CPI commodities (CUSR0000SAC), the PCE price index for nondurable goods (DNDGRG3M086SBEA), CPI less shelter (CUSR0000SA0L2), CPI all items (CPIAUCSL), CPI less medical care (CUSR0000SA0L5), CPI transportation (CPITRNSL), the PCE deflator (PCEPI) and CPI less food (CPIULFSL), with correlations of about 0.66–0.75. All of these enter as changes in inflation (code 6), and the top series are goods, commodity and transportation prices. Factor 2 therefore mainly captures surprises in goods and energy inflation, such as swings in oil prices.
