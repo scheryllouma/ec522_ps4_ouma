@@ -248,3 +248,65 @@ sort(abs(cor(pc$x[, 2], Z))[1, ], decreasing = TRUE)[1:8]
 **Factor 1 is a real-activity (business-cycle) factor.** The eight series most correlated with it are total nonfarm payrolls (PAYEMS), IP: manufacturing (IPMANSICS), goods-producing employment (USGOOD), total industrial production (INDPRO), manufacturing employment (MANEMP), IP: final products and nonindustrial supplies (IPFPNSS), manufacturing capacity utilization (CUMFNS) and durable-goods employment (DMANEMP), with correlations of about 0.78–0.84. These are the output and labor-market series in FRED-MD. The plot confirms this reading: the factor falls sharply in every NBER recession (1970, 1974–75, 1980, 1981–82, 1990–91, 2001 and especially 2008–09). Its lowest values are in May 1980, December 1974 and January 2009.
 
 **Factor 2 is an inflation (price) factor.** Its eight most correlated series are all price indices: CPI commodities (CUSR0000SAC), the PCE price index for nondurable goods (DNDGRG3M086SBEA), CPI less shelter (CUSR0000SA0L2), CPI all items (CPIAUCSL), CPI less medical care (CUSR0000SA0L5), CPI transportation (CPITRNSL), the PCE deflator (PCEPI) and CPI less food (CPIULFSL), with correlations of about 0.66–0.75. All of these enter as changes in inflation (code 6), and the top series are goods, commodity and transportation prices. Factor 2 therefore mainly captures surprises in goods and energy inflation, such as swings in oil prices.
+
+### 5.3 Replicating the IP horse race
+
+```{r}
+#| label: ip-race
+ip <- fm$INDPRO
+n <- nrow(Z)
+init <- which(fm$date == as.Date("1989-12-01"))
+
+e_ar <- NULL
+e_fa <- NULL
+for (T in init:(n - 1)) {
+  F_T <- prcomp(scale(Z[1:T, ]))$x[, 1:3]         # factors using data through T
+  d <- data.frame(y_next = ip[2:T], y = ip[1:(T - 1)], F_T[1:(T - 1), ])
+  new <- data.frame(y = ip[T], t(F_T[T, ]))
+  e_ar <- c(e_ar, ip[T + 1] - predict(lm(y_next ~ y, d), new))
+  e_fa <- c(e_fa, ip[T + 1] - predict(lm(y_next ~ ., d), new))
+}
+c(RMSE_AR = sqrt(mean(e_ar^2)), RMSE_FA = sqrt(mean(e_fa^2)))
+```
+
+I get the same numbers as in class: an RMSE of **`r round(sqrt(mean(e_ar^2)), 3)`** for the AR(1) and **`r round(sqrt(mean(e_fa^2)), 3)`** for the AR(1) with three factors, over `r length(e_ar)` forecasts (January 1990 to December 2019).
+
+**Why estimating the factors once on the full sample would be cheating:** the principal components (the means and standard deviations used in `scale()`, and the loadings) would be computed with data from *after* each forecast origin. The "factor at time T" would then contain information from T+1 through 2019, including the very value of INDPRO we are trying to forecast, since INDPRO is one of the 121 series in Z. This is **look-ahead bias**: it would make the factor model look more accurate than any forecaster could actually have been in real time, so it would not be a fair pseudo-out-of-sample test. Re-estimating the factors at each origin, using only data through T, mimics what a forecaster could really have done. (Even so, we are using today's revised data rather than the data available at the time, so the exercise is still somewhat favourable to the model.)
+
+### 5.4 A direct forecast of 12-month CPI inflation
+
+```{r}
+#| label: cpi-race
+direct_race <- function(series, h = 12, r = 3) {
+  lv <- md |>
+    mutate(log_x = log(.data[[series]]),
+           g = 100 * (log_x - lag(log_x))) |>
+    filter(date >= as.Date("1960-03-01"), date <= as.Date("2019-12-01"))
+  yh <- 100 * (lead(lv$log_x, h) - lv$log_x)      # growth over the next h months
+  g  <- lv$g                                      # growth over the latest month
+  e_ar <- NULL
+  e_fa <- NULL
+  for (T in init:(n - h)) {
+    F_T <- prcomp(scale(Z[1:T, ]))$x[, 1:r, drop = FALSE]
+    i <- 1:(T - h)
+    d <- data.frame(yh = yh[i], g = g[i], F_T[i, , drop = FALSE])
+    new <- data.frame(g = g[T], F_T[T, , drop = FALSE])
+    e_ar <- c(e_ar, yh[T] - predict(lm(yh ~ g, d), new))
+    e_fa <- c(e_fa, yh[T] - predict(lm(yh ~ ., d), new))
+  }
+  tibble(series, forecasts = length(e_ar),
+         RMSE_AR = sqrt(mean(e_ar^2)), RMSE_FA = sqrt(mean(e_fa^2)),
+         MAE_AR = mean(abs(e_ar)), MAE_FA = mean(abs(e_fa)),
+         DM_pvalue = forecast::dm.test(e_ar, e_fa, h = h, power = 2,
+                                     varestimator = "bartlett")$p.value)
+}
+
+cpi_race <- direct_race("CPIAUCSL")
+cpi_race |> knitr::kable(digits = 4)
+```
+
+**Yes, the factors clearly improve the 12-month CPI inflation forecast.** Over `r cpi_race$forecasts` forecasts (origins from December 1989 to December 2018, so targets ending between December 1990 and December 2019), the RMSE falls from `r round(cpi_race$RMSE_AR, 3)` to `r round(cpi_race$RMSE_FA, 3)` percentage points. That is a **`r round(100 * (1 - cpi_race$RMSE_FA / cpi_race$RMSE_AR), 1)`% reduction in RMSE**, and the MAE falls by `r round(100 * (1 - cpi_race$MAE_FA / cpi_race$MAE_AR), 1)`% (from `r round(cpi_race$MAE_AR, 3)` to `r round(cpi_race$MAE_FA, 3)`). The DM test, which uses a Bartlett (HAC) variance estimator to allow for the overlap in 12-month-ahead errors, gives a p-value of `r format(signif(cpi_race$DM_pvalue, 2), scientific = FALSE)`, so the difference is **statistically significant at the 1% level**. This gain is both larger and more convincing than the one-month-ahead IP result in 5.3 (RMSE 0.617 → 0.589); a DM test on those IP errors gives a p-value of about 0.17, so that improvement is not statistically significant.
+
+## Reflection
+
+The biggest surprise for me was how often the simpler model won: the VAR(1) beat the VAR(4) on almost every variable, even though the VAR(4) contains it as a special case. The same idea kept coming back in different forms. Shrinkage in the BVAR, equal weights in the combination, and squeezing 121 series into three factors all trade a bit of flexibility for less estimation noise, and that trade usually paid off. But it can go too far, as the λ = 0.05 BVAR and the ARIMA/ETS combination showed when they were pulled away from the better forecast. I also learned to be careful about declaring a winner, since many of the gaps in my tables were small, and only the Diebold–Mariano tests told me which ones were real.

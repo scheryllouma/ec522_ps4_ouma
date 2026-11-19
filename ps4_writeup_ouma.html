@@ -2230,7 +2230,10 @@ vertical-align: -.125em;
   <ul class="collapse">
   <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">5.1 Data</a></li>
   <li><a href="#estimating-the-factors" id="toc-estimating-the-factors" class="nav-link" data-scroll-target="#estimating-the-factors">5.2 Estimating the factors</a></li>
+  <li><a href="#replicating-the-ip-horse-race" id="toc-replicating-the-ip-horse-race" class="nav-link" data-scroll-target="#replicating-the-ip-horse-race">5.3 Replicating the IP horse race</a></li>
+  <li><a href="#a-direct-forecast-of-12-month-cpi-inflation" id="toc-a-direct-forecast-of-12-month-cpi-inflation" class="nav-link" data-scroll-target="#a-direct-forecast-of-12-month-cpi-inflation">5.4 A direct forecast of 12-month CPI inflation</a></li>
   </ul></li>
+  <li><a href="#reflection" id="toc-reflection" class="nav-link" data-scroll-target="#reflection">Reflection</a></li>
   </ul>
 </nav>
 </div>
@@ -2758,6 +2761,93 @@ Cumulative Proportion  0.149840 0.223910 0.294530 0.350280 0.393820</code></pre>
 <p><strong>Factor 1 is a real-activity (business-cycle) factor.</strong> The eight series most correlated with it are total nonfarm payrolls (PAYEMS), IP: manufacturing (IPMANSICS), goods-producing employment (USGOOD), total industrial production (INDPRO), manufacturing employment (MANEMP), IP: final products and nonindustrial supplies (IPFPNSS), manufacturing capacity utilization (CUMFNS) and durable-goods employment (DMANEMP), with correlations of about 0.78–0.84. These are the output and labor-market series in FRED-MD. The plot confirms this reading: the factor falls sharply in every NBER recession (1970, 1974–75, 1980, 1981–82, 1990–91, 2001 and especially 2008–09). Its lowest values are in May 1980, December 1974 and January 2009.</p>
 <p><strong>Factor 2 is an inflation (price) factor.</strong> Its eight most correlated series are all price indices: CPI commodities (CUSR0000SAC), the PCE price index for nondurable goods (DNDGRG3M086SBEA), CPI less shelter (CUSR0000SA0L2), CPI all items (CPIAUCSL), CPI less medical care (CUSR0000SA0L5), CPI transportation (CPITRNSL), the PCE deflator (PCEPI) and CPI less food (CPIULFSL), with correlations of about 0.66–0.75. All of these enter as changes in inflation (code 6), and the top series are goods, commodity and transportation prices. Factor 2 therefore mainly captures surprises in goods and energy inflation, such as swings in oil prices.</p>
 </section>
+<section id="replicating-the-ip-horse-race" class="level3">
+<h3 class="anchored" data-anchor-id="replicating-the-ip-horse-race">5.3 Replicating the IP horse race</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>ip <span class="ot">&lt;-</span> fm<span class="sc">$</span>INDPRO</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(Z)</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>init <span class="ot">&lt;-</span> <span class="fu">which</span>(fm<span class="sc">$</span>date <span class="sc">==</span> <span class="fu">as.Date</span>(<span class="st">&quot;1989-12-01&quot;</span>))</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>e_ar <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>e_fa <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (T <span class="cf">in</span> init<span class="sc">:</span>(n <span class="sc">-</span> <span class="dv">1</span>)) {</span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>  F_T <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(<span class="fu">scale</span>(Z[<span class="dv">1</span><span class="sc">:</span>T, ]))<span class="sc">$</span>x[, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>]         <span class="co"># factors using data through T</span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>  d <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">y_next =</span> ip[<span class="dv">2</span><span class="sc">:</span>T], <span class="at">y =</span> ip[<span class="dv">1</span><span class="sc">:</span>(T <span class="sc">-</span> <span class="dv">1</span>)], F_T[<span class="dv">1</span><span class="sc">:</span>(T <span class="sc">-</span> <span class="dv">1</span>), ])</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>  new <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">y =</span> ip[T], <span class="fu">t</span>(F_T[T, ]))</span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>  e_ar <span class="ot">&lt;-</span> <span class="fu">c</span>(e_ar, ip[T <span class="sc">+</span> <span class="dv">1</span>] <span class="sc">-</span> <span class="fu">predict</span>(<span class="fu">lm</span>(y_next <span class="sc">~</span> y, d), new))</span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>  e_fa <span class="ot">&lt;-</span> <span class="fu">c</span>(e_fa, ip[T <span class="sc">+</span> <span class="dv">1</span>] <span class="sc">-</span> <span class="fu">predict</span>(<span class="fu">lm</span>(y_next <span class="sc">~</span> ., d), new))</span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">RMSE_AR =</span> <span class="fu">sqrt</span>(<span class="fu">mean</span>(e_ar<span class="sc">^</span><span class="dv">2</span>)), <span class="at">RMSE_FA =</span> <span class="fu">sqrt</span>(<span class="fu">mean</span>(e_fa<span class="sc">^</span><span class="dv">2</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  RMSE_AR   RMSE_FA 
+0.6168431 0.5887272 </code></pre>
+</div>
+</div>
+<p>I get the same numbers as in class: an RMSE of <strong>0.617</strong> for the AR(1) and <strong>0.589</strong> for the AR(1) with three factors, over 360 forecasts (January 1990 to December 2019).</p>
+<p><strong>Why estimating the factors once on the full sample would be cheating:</strong> the principal components (the means and standard deviations used in <code>scale()</code>, and the loadings) would be computed with data from <em>after</em> each forecast origin. The “factor at time T” would then contain information from T+1 through 2019, including the very value of INDPRO we are trying to forecast, since INDPRO is one of the 121 series in Z. This is <strong>look-ahead bias</strong>: it would make the factor model look more accurate than any forecaster could actually have been in real time, so it would not be a fair pseudo-out-of-sample test. Re-estimating the factors at each origin, using only data through T, mimics what a forecaster could really have done. (Even so, we are using today’s revised data rather than the data available at the time, so the exercise is still somewhat favourable to the model.)</p>
+</section>
+<section id="a-direct-forecast-of-12-month-cpi-inflation" class="level3">
+<h3 class="anchored" data-anchor-id="a-direct-forecast-of-12-month-cpi-inflation">5.4 A direct forecast of 12-month CPI inflation</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>direct_race <span class="ot">&lt;-</span> <span class="cf">function</span>(series, <span class="at">h =</span> <span class="dv">12</span>, <span class="at">r =</span> <span class="dv">3</span>) {</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  lv <span class="ot">&lt;-</span> md <span class="sc">|&gt;</span></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">log_x =</span> <span class="fu">log</span>(.data[[series]]),</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>           <span class="at">g =</span> <span class="dv">100</span> <span class="sc">*</span> (log_x <span class="sc">-</span> <span class="fu">lag</span>(log_x))) <span class="sc">|&gt;</span></span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(date <span class="sc">&gt;=</span> <span class="fu">as.Date</span>(<span class="st">&quot;1960-03-01&quot;</span>), date <span class="sc">&lt;=</span> <span class="fu">as.Date</span>(<span class="st">&quot;2019-12-01&quot;</span>))</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>  yh <span class="ot">&lt;-</span> <span class="dv">100</span> <span class="sc">*</span> (<span class="fu">lead</span>(lv<span class="sc">$</span>log_x, h) <span class="sc">-</span> lv<span class="sc">$</span>log_x)      <span class="co"># growth over the next h months</span></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>  g  <span class="ot">&lt;-</span> lv<span class="sc">$</span>g                                      <span class="co"># growth over the latest month</span></span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>  e_ar <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>  e_fa <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (T <span class="cf">in</span> init<span class="sc">:</span>(n <span class="sc">-</span> h)) {</span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>    F_T <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(<span class="fu">scale</span>(Z[<span class="dv">1</span><span class="sc">:</span>T, ]))<span class="sc">$</span>x[, <span class="dv">1</span><span class="sc">:</span>r, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>    i <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span>(T <span class="sc">-</span> h)</span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>    d <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">yh =</span> yh[i], <span class="at">g =</span> g[i], F_T[i, , <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a>    new <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">g =</span> g[T], F_T[T, , <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a>    e_ar <span class="ot">&lt;-</span> <span class="fu">c</span>(e_ar, yh[T] <span class="sc">-</span> <span class="fu">predict</span>(<span class="fu">lm</span>(yh <span class="sc">~</span> g, d), new))</span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a>    e_fa <span class="ot">&lt;-</span> <span class="fu">c</span>(e_fa, yh[T] <span class="sc">-</span> <span class="fu">predict</span>(<span class="fu">lm</span>(yh <span class="sc">~</span> ., d), new))</span>
+<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(series, <span class="at">forecasts =</span> <span class="fu">length</span>(e_ar),</span>
+<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a>         <span class="at">RMSE_AR =</span> <span class="fu">sqrt</span>(<span class="fu">mean</span>(e_ar<span class="sc">^</span><span class="dv">2</span>)), <span class="at">RMSE_FA =</span> <span class="fu">sqrt</span>(<span class="fu">mean</span>(e_fa<span class="sc">^</span><span class="dv">2</span>)),</span>
+<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">MAE_AR =</span> <span class="fu">mean</span>(<span class="fu">abs</span>(e_ar)), <span class="at">MAE_FA =</span> <span class="fu">mean</span>(<span class="fu">abs</span>(e_fa)),</span>
+<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a>         <span class="at">DM_pvalue =</span> forecast<span class="sc">::</span><span class="fu">dm.test</span>(e_ar, e_fa, <span class="at">h =</span> h, <span class="at">power =</span> <span class="dv">2</span>,</span>
+<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">varestimator =</span> <span class="st">&quot;bartlett&quot;</span>)<span class="sc">$</span>p.value)</span>
+<span id="cb39-23"><a href="#cb39-23" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb39-24"><a href="#cb39-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-25"><a href="#cb39-25" aria-hidden="true" tabindex="-1"></a>cpi_race <span class="ot">&lt;-</span> <span class="fu">direct_race</span>(<span class="st">&quot;CPIAUCSL&quot;</span>)</span>
+<span id="cb39-26"><a href="#cb39-26" aria-hidden="true" tabindex="-1"></a>cpi_race <span class="sc">|&gt;</span> knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">series</th>
+<th style="text-align: right;">forecasts</th>
+<th style="text-align: right;">RMSE_AR</th>
+<th style="text-align: right;">RMSE_FA</th>
+<th style="text-align: right;">MAE_AR</th>
+<th style="text-align: right;">MAE_FA</th>
+<th style="text-align: right;">DM_pvalue</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">CPIAUCSL</td>
+<td style="text-align: right;">349</td>
+<td style="text-align: right;">2.1079</td>
+<td style="text-align: right;">1.8937</td>
+<td style="text-align: right;">1.5777</td>
+<td style="text-align: right;">1.3494</td>
+<td style="text-align: right;">4e-04</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p><strong>Yes, the factors clearly improve the 12-month CPI inflation forecast.</strong> Over 349 forecasts (origins from December 1989 to December 2018, so targets ending between December 1990 and December 2019), the RMSE falls from 2.108 to 1.894 percentage points. That is a <strong>10.2% reduction in RMSE</strong>, and the MAE falls by 14.5% (from 1.578 to 1.349). The DM test, which uses a Bartlett (HAC) variance estimator to allow for the overlap in 12-month-ahead errors, gives a p-value of 0.00044, so the difference is <strong>statistically significant at the 1% level</strong>. This gain is both larger and more convincing than the one-month-ahead IP result in 5.3 (RMSE 0.617 → 0.589); a DM test on those IP errors gives a p-value of about 0.17, so that improvement is not statistically significant.</p>
+</section>
+</section>
+<section id="reflection" class="level2">
+<h2 class="anchored" data-anchor-id="reflection">Reflection</h2>
+<p>The biggest surprise for me was how often the simpler model won: the VAR(1) beat the VAR(4) on almost every variable, even though the VAR(4) contains it as a special case. The same idea kept coming back in different forms. Shrinkage in the BVAR, equal weights in the combination, and squeezing 121 series into three factors all trade a bit of flexibility for less estimation noise, and that trade usually paid off. But it can go too far, as the λ = 0.05 BVAR and the ARIMA/ETS combination showed when they were pulled away from the better forecast. I also learned to be careful about declaring a winner, since many of the gaps in my tables were small, and only the Diebold–Mariano tests told me which ones were real.</p>
 </section>
 
 </main>
