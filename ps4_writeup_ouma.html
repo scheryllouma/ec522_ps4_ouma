@@ -2223,6 +2223,8 @@ vertical-align: -.125em;
   <li><a href="#var-vs.-bvar" id="toc-var-vs.-bvar" class="nav-link" data-scroll-target="#var-vs.-bvar">VAR vs. BVAR</a>
   <ul class="collapse">
   <li><a href="#data-and-ts-cv-setup" id="toc-data-and-ts-cv-setup" class="nav-link" data-scroll-target="#data-and-ts-cv-setup">4.1 Data and TS-CV setup</a></li>
+  <li><a href="#rmse-comparison" id="toc-rmse-comparison" class="nav-link" data-scroll-target="#rmse-comparison">4.2–4.3 RMSE comparison</a></li>
+  <li><a href="#c-dieboldmariano-tests-var4-vs.-bvar4-λ-0.3" id="toc-c-dieboldmariano-tests-var4-vs.-bvar4-λ-0.3" class="nav-link" data-scroll-target="#c-dieboldmariano-tests-var4-vs.-bvar4-λ-0.3">4.3c Diebold–Mariano tests: VAR(4) vs. BVAR(4), λ = 0.3</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -2541,6 +2543,124 @@ alternative hypothesis: two.sided</code></pre>
 <section id="data-and-ts-cv-setup" class="level3">
 <h3 class="anchored" data-anchor-id="data-and-ts-cv-setup">4.1 Data and TS-CV setup</h3>
 <p>The eight quarterly series from FRED-QD (September 2026 vintage) run from 1960 Q1 to 2019 Q4, giving a 240 × 8 matrix. The first training sample is 1960 Q1–1989 Q4 (120 quarters) and the last is 1960 Q1–2019 Q3. The forecast origins 120 to 239 give <strong>120 one-quarter-ahead forecasts for each variable</strong>. The <strong>first forecast is for 1990 Q1</strong> and the <strong>last is for 2019 Q4</strong>. (FRED-QD dates each quarter by its last month, so 1990 Q1 appears as March 1, 1990.)</p>
+</section>
+<section id="rmse-comparison" class="level3">
+<h3 class="anchored" data-anchor-id="rmse-comparison">4.2–4.3 RMSE comparison</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>var_results <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;results/var_results.rds&quot;</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>var_results <span class="sc">|&gt;</span> knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 32%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: right;">VAR(1)</th>
+<th style="text-align: right;">VAR(4)</th>
+<th style="text-align: right;">BVAR(4), lambda = 0.3</th>
+<th style="text-align: right;">BVAR(4), lambda = 0.05</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">gdp</td>
+<td style="text-align: right;">0.513</td>
+<td style="text-align: right;">0.569</td>
+<td style="text-align: right;">0.539</td>
+<td style="text-align: right;">0.567</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">cons</td>
+<td style="text-align: right;">0.460</td>
+<td style="text-align: right;">0.527</td>
+<td style="text-align: right;">0.486</td>
+<td style="text-align: right;">0.495</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">inv</td>
+<td style="text-align: right;">2.493</td>
+<td style="text-align: right;">2.521</td>
+<td style="text-align: right;">2.385</td>
+<td style="text-align: right;">2.698</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">emp</td>
+<td style="text-align: right;">0.196</td>
+<td style="text-align: right;">0.228</td>
+<td style="text-align: right;">0.211</td>
+<td style="text-align: right;">0.315</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">infl</td>
+<td style="text-align: right;">0.208</td>
+<td style="text-align: right;">0.207</td>
+<td style="text-align: right;">0.197</td>
+<td style="text-align: right;">0.330</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">unrate</td>
+<td style="text-align: right;">0.199</td>
+<td style="text-align: right;">0.215</td>
+<td style="text-align: right;">0.203</td>
+<td style="text-align: right;">0.216</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ffr</td>
+<td style="text-align: right;">0.390</td>
+<td style="text-align: right;">0.497</td>
+<td style="text-align: right;">0.414</td>
+<td style="text-align: right;">0.358</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">gs10</td>
+<td style="text-align: right;">0.361</td>
+<td style="text-align: right;">0.379</td>
+<td style="text-align: right;">0.359</td>
+<td style="text-align: right;">0.362</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p><strong>4.2: OLS VAR(1) vs. VAR(4).</strong> The VAR(1) forecasts better than the VAR(4) for <strong>7 of the 8 variables</strong>. Inflation is the only exception, and there the two are essentially tied (0.207 vs. 0.208). The VAR(4) contains the VAR(1) as a special case, so it must fit at least as well <em>in sample</em>, but in-sample fit is not what matters for forecasting. Each equation of the VAR(4) has 33 coefficients (264 in total), compared with 9 per equation (72 in total) in the VAR(1). With only 120–239 quarterly observations, the extra lag coefficients are estimated imprecisely, and that estimation noise feeds directly into the forecasts. The noise outweighs the small bias the VAR(1) introduces by leaving out lags 2–4. This is the bias–variance trade-off: a smaller, “wrong” model can forecast better because its parameters are estimated much more precisely.</p>
+<p><strong>4.3b: BVAR(4), λ = 0.3, vs. OLS VAR(4).</strong> The BVAR beats the OLS VAR(4) for <strong>all eight variables</strong>. For example: GDP 0.539 vs. 0.569, consumption 0.486 vs. 0.527, and the funds rate 0.414 vs. 0.497. The two models have the same variables, the same four lags and the same 264 coefficients, so the only difference is the <strong>Minnesota prior</strong>. It shrinks every coefficient toward zero (our prior mean, since all series are growth rates or changes), and it shrinks more distant lags, and lags of other variables, more heavily than a variable’s own recent lags. This accepts a little bias in exchange for a large reduction in estimation variance, which is exactly what the over-parameterised VAR(4) needed.</p>
+<p><strong>BVAR(4), λ = 0.3, vs. VAR(1).</strong> This comparison is closer. The BVAR is better for investment (2.385 vs. 2.493), inflation (0.197 vs. 0.208) and the 10-year yield (0.359 vs. 0.361, essentially a tie). The VAR(1) is still better for GDP, consumption, employment, unemployment and the funds rate. Shrinkage recovers most of what the VAR(4) lost, but it does not uniformly beat the simple model. That makes sense, because the VAR(1) is itself an extreme form of shrinkage: it sets the coefficients on lags 2–4 exactly to zero.</p>
+<p><strong>BVAR(4), λ = 0.05.</strong> Tightening the prior makes forecasts worse for 7 of the 8 variables, and for employment growth (0.315) and inflation (0.330) far worse than every other model. The only exception is the funds rate, where λ = 0.05 gives the best RMSE in the table (0.358). With a prior mean of zero and a very small λ, almost all of the lag coefficients are forced to zero, so the forecast collapses to roughly the training-sample average. That throws away the strong persistence in employment growth and inflation. Changes in the funds rate have little predictable dynamics, so for that series a near-average forecast happens to work well. The lesson is that <strong>shrinkage has an optimum</strong>: too little (OLS) overfits and too much underfits, and λ = 0.3 is much closer to the sweet spot than λ = 0.05 for most variables.</p>
+<p><strong>Is the winner’s RMSE a fair estimate of future accuracy?</strong> No. If I use this table to <em>choose</em> a model (and a value of λ), the 1990–2019 evaluation period has been used for model selection, so it is no longer truly out of sample. Each RMSE is a noisy estimate, and picking the smallest of several noisy estimates favours the model that happened to be lucky over this particular period (the “winner’s curse”, or data snooping). The winner’s future RMSE is therefore likely to be higher than the table suggests. An honest estimate would need a fresh hold-out period that played no part in the choice. In addition, 1990–2019 was mostly the calm Great Moderation, and future periods (such as the post-pandemic years) may look different.</p>
+</section>
+<section id="c-dieboldmariano-tests-var4-vs.-bvar4-λ-0.3" class="level3">
+<h3 class="anchored" data-anchor-id="c-dieboldmariano-tests-var4-vs.-bvar4-λ-0.3">4.3c Diebold–Mariano tests: VAR(4) vs. BVAR(4), λ = 0.3</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>var_dm <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;results/var_dm.rds&quot;</span>)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>var_dm<span class="sc">$</span>gdp     <span class="co"># GDP growth</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Diebold-Mariano Test
+
+data:  e_var4e_bvar
+DM = 2.1366, Forecast horizon = 1, Loss function power = 2, p-value =
+0.03468
+alternative hypothesis: two.sided</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>var_dm<span class="sc">$</span>cons    <span class="co"># consumption growth</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Diebold-Mariano Test
+
+data:  e_var4_conse_bvar_cons
+DM = 3.0264, Forecast horizon = 1, Loss function power = 2, p-value =
+0.003034
+alternative hypothesis: two.sided</code></pre>
+</div>
+</div>
+<p>For <strong>GDP growth</strong> the DM statistic is 2.137 with a p-value of 0.035. For <strong>consumption growth</strong>, my second variable, it is 3.026 with a p-value of 0.003. The statistic is positive because the first model (VAR(4)) has the larger squared errors. We reject equal accuracy at the 5% level for GDP and at the 1% level for consumption: the BVAR is significantly more accurate than the unrestricted VAR(4) for both. So the gain from shrinkage in 4.3b is not just sampling noise, at least for these two series.</p>
+<p>This should also make us cautious about the rest of the table. Many of the other differences are much smaller, for example the BVAR vs. the VAR(1) for the 10-year yield (0.359 vs. 0.361), or the VAR(1) vs. the VAR(4) for inflation (0.208 vs. 0.207). Differences that small would almost certainly not be statistically significant, so we should not read them as real rankings. As an extra check I ran the same test for all eight variables: the BVAR’s advantage over the VAR(4) is significant at 5% for GDP, consumption, employment and the funds rate, but not for investment, inflation, unemployment or the 10-year yield. So even in the comparison the BVAR “won” on every variable, the win is only clearly significant for about half of them.</p>
 </section>
 </section>
 
