@@ -146,3 +146,63 @@ cor(liquor_errs$arima, liquor_errs$ets)
 ### 4.1 Data and TS-CV setup
 
 The eight quarterly series from FRED-QD (September 2026 vintage) run from 1960 Q1 to 2019 Q4, giving a 240 × 8 matrix. The first training sample is 1960 Q1–1989 Q4 (120 quarters) and the last is 1960 Q1–2019 Q3. The forecast origins 120 to 239 give **120 one-quarter-ahead forecasts for each variable**. The **first forecast is for 1990 Q1** and the **last is for 2019 Q4**. (FRED-QD dates each quarter by its last month, so 1990 Q1 appears as March 1, 1990.)
+
+### 4.2–4.3 RMSE comparison
+
+```{r}
+#| label: var-table
+var_results <- readRDS("results/var_results.rds")
+var_results |> knitr::kable(digits = 3)
+```
+
+**4.2: OLS VAR(1) vs. VAR(4).** The VAR(1) forecasts better than the VAR(4) for **7 of the 8 variables**. Inflation is the only exception, and there the two are essentially tied (0.207 vs. 0.208). The VAR(4) contains the VAR(1) as a special case, so it must fit at least as well *in sample*, but in-sample fit is not what matters for forecasting. Each equation of the VAR(4) has 33 coefficients (264 in total), compared with 9 per equation (72 in total) in the VAR(1). With only 120–239 quarterly observations, the extra lag coefficients are estimated imprecisely, and that estimation noise feeds directly into the forecasts. The noise outweighs the small bias the VAR(1) introduces by leaving out lags 2–4. This is the bias–variance trade-off: a smaller, "wrong" model can forecast better because its parameters are estimated much more precisely.
+
+**4.3b: BVAR(4), λ = 0.3, vs. OLS VAR(4).** The BVAR beats the OLS VAR(4) for **all eight variables**. For example: GDP 0.539 vs. 0.569, consumption 0.486 vs. 0.527, and the funds rate 0.414 vs. 0.497. The two models have the same variables, the same four lags and the same 264 coefficients, so the only difference is the **Minnesota prior**. It shrinks every coefficient toward zero (our prior mean, since all series are growth rates or changes), and it shrinks more distant lags, and lags of other variables, more heavily than a variable's own recent lags. This accepts a little bias in exchange for a large reduction in estimation variance, which is exactly what the over-parameterised VAR(4) needed.
+
+**BVAR(4), λ = 0.3, vs. VAR(1).** This comparison is closer. The BVAR is better for investment (2.385 vs. 2.493), inflation (0.197 vs. 0.208) and the 10-year yield (0.359 vs. 0.361, essentially a tie). The VAR(1) is still better for GDP, consumption, employment, unemployment and the funds rate. Shrinkage recovers most of what the VAR(4) lost, but it does not uniformly beat the simple model. That makes sense, because the VAR(1) is itself an extreme form of shrinkage: it sets the coefficients on lags 2–4 exactly to zero.
+
+**BVAR(4), λ = 0.05.** Tightening the prior makes forecasts worse for 7 of the 8 variables, and for employment growth (0.315) and inflation (0.330) far worse than every other model. The only exception is the funds rate, where λ = 0.05 gives the best RMSE in the table (0.358). With a prior mean of zero and a very small λ, almost all of the lag coefficients are forced to zero, so the forecast collapses to roughly the training-sample average. That throws away the strong persistence in employment growth and inflation. Changes in the funds rate have little predictable dynamics, so for that series a near-average forecast happens to work well. The lesson is that **shrinkage has an optimum**: too little (OLS) overfits and too much underfits, and λ = 0.3 is much closer to the sweet spot than λ = 0.05 for most variables.
+
+**Is the winner's RMSE a fair estimate of future accuracy?** No. If I use this table to *choose* a model (and a value of λ), the 1990–2019 evaluation period has been used for model selection, so it is no longer truly out of sample. Each RMSE is a noisy estimate, and picking the smallest of several noisy estimates favours the model that happened to be lucky over this particular period (the "winner's curse", or data snooping). The winner's future RMSE is therefore likely to be higher than the table suggests. An honest estimate would need a fresh hold-out period that played no part in the choice. In addition, 1990–2019 was mostly the calm Great Moderation, and future periods (such as the post-pandemic years) may look different.
+
+### 4.3c Diebold–Mariano tests: VAR(4) vs. BVAR(4), λ = 0.3
+
+```{r}
+#| label: var-dm
+var_dm <- readRDS("results/var_dm.rds")
+var_dm$gdp     # GDP growth
+var_dm$cons    # consumption growth
+```
+
+For **GDP growth** the DM statistic is 2.137 with a p-value of 0.035. For **consumption growth**, my second variable, it is 3.026 with a p-value of 0.003. The statistic is positive because the first model (VAR(4)) has the larger squared errors. We reject equal accuracy at the 5% level for GDP and at the 1% level for consumption: the BVAR is significantly more accurate than the unrestricted VAR(4) for both. So the gain from shrinkage in 4.3b is not just sampling noise, at least for these two series.
+
+This should also make us cautious about the rest of the table. Many of the other differences are much smaller, for example the BVAR vs. the VAR(1) for the 10-year yield (0.359 vs. 0.361), or the VAR(1) vs. the VAR(4) for inflation (0.208 vs. 0.207). Differences that small would almost certainly not be statistically significant, so we should not read them as real rankings. As an extra check I ran the same test for all eight variables: the BVAR's advantage over the VAR(4) is significant at 5% for GDP, consumption, employment and the funds rate, but not for investment, inflation, unemployment or the 10-year yield. So even in the comparison the BVAR "won" on every variable, the win is only clearly significant for about half of them.### 4.2–4.3 RMSE comparison
+
+```{r}
+#| label: var-table
+var_results <- readRDS("results/var_results.rds")
+var_results |> knitr::kable(digits = 3)
+```
+
+**4.2: OLS VAR(1) vs. VAR(4).** The VAR(1) forecasts better than the VAR(4) for **7 of the 8 variables**. Inflation is the only exception, and there the two are essentially tied (0.207 vs. 0.208). The VAR(4) contains the VAR(1) as a special case, so it must fit at least as well *in sample*, but in-sample fit is not what matters for forecasting. Each equation of the VAR(4) has 33 coefficients (264 in total), compared with 9 per equation (72 in total) in the VAR(1). With only 120–239 quarterly observations, the extra lag coefficients are estimated imprecisely, and that estimation noise feeds directly into the forecasts. The noise outweighs the small bias the VAR(1) introduces by leaving out lags 2–4. This is the bias–variance trade-off: a smaller, "wrong" model can forecast better because its parameters are estimated much more precisely.
+
+**4.3b: BVAR(4), λ = 0.3, vs. OLS VAR(4).** The BVAR beats the OLS VAR(4) for **all eight variables**. For example: GDP 0.539 vs. 0.569, consumption 0.486 vs. 0.527, and the funds rate 0.414 vs. 0.497. The two models have the same variables, the same four lags and the same 264 coefficients, so the only difference is the **Minnesota prior**. It shrinks every coefficient toward zero (our prior mean, since all series are growth rates or changes), and it shrinks more distant lags, and lags of other variables, more heavily than a variable's own recent lags. This accepts a little bias in exchange for a large reduction in estimation variance, which is exactly what the over-parameterised VAR(4) needed.
+
+**BVAR(4), λ = 0.3, vs. VAR(1).** This comparison is closer. The BVAR is better for investment (2.385 vs. 2.493), inflation (0.197 vs. 0.208) and the 10-year yield (0.359 vs. 0.361, essentially a tie). The VAR(1) is still better for GDP, consumption, employment, unemployment and the funds rate. Shrinkage recovers most of what the VAR(4) lost, but it does not uniformly beat the simple model. That makes sense, because the VAR(1) is itself an extreme form of shrinkage: it sets the coefficients on lags 2–4 exactly to zero.
+
+**BVAR(4), λ = 0.05.** Tightening the prior makes forecasts worse for 7 of the 8 variables, and for employment growth (0.315) and inflation (0.330) far worse than every other model. The only exception is the funds rate, where λ = 0.05 gives the best RMSE in the table (0.358). With a prior mean of zero and a very small λ, almost all of the lag coefficients are forced to zero, so the forecast collapses to roughly the training-sample average. That throws away the strong persistence in employment growth and inflation. Changes in the funds rate have little predictable dynamics, so for that series a near-average forecast happens to work well. The lesson is that **shrinkage has an optimum**: too little (OLS) overfits and too much underfits, and λ = 0.3 is much closer to the sweet spot than λ = 0.05 for most variables.
+
+**Is the winner's RMSE a fair estimate of future accuracy?** No. If I use this table to *choose* a model (and a value of λ), the 1990–2019 evaluation period has been used for model selection, so it is no longer truly out of sample. Each RMSE is a noisy estimate, and picking the smallest of several noisy estimates favours the model that happened to be lucky over this particular period (the "winner's curse", or data snooping). The winner's future RMSE is therefore likely to be higher than the table suggests. An honest estimate would need a fresh hold-out period that played no part in the choice. In addition, 1990–2019 was mostly the calm Great Moderation, and future periods (such as the post-pandemic years) may look different.
+
+### 4.3c Diebold–Mariano tests: VAR(4) vs. BVAR(4), λ = 0.3
+
+```{r}
+#| label: var-dm
+var_dm <- readRDS("results/var_dm.rds")
+var_dm$gdp     # GDP growth
+var_dm$cons    # consumption growth
+```
+
+For **GDP growth** the DM statistic is 2.137 with a p-value of 0.035. For **consumption growth**, my second variable, it is 3.026 with a p-value of 0.003. The statistic is positive because the first model (VAR(4)) has the larger squared errors. We reject equal accuracy at the 5% level for GDP and at the 1% level for consumption: the BVAR is significantly more accurate than the unrestricted VAR(4) for both. So the gain from shrinkage in 4.3b is not just sampling noise, at least for these two series.
+
+This should also make us cautious about the rest of the table. Many of the other differences are much smaller, for example the BVAR vs. the VAR(1) for the 10-year yield (0.359 vs. 0.361), or the VAR(1) vs. the VAR(4) for inflation (0.208 vs. 0.207). Differences that small would almost certainly not be statistically significant, so we should not read them as real rankings. As an extra check I ran the same test for all eight variables: the BVAR's advantage over the VAR(4) is significant at 5% for GDP, consumption, employment and the funds rate, but not for investment, inflation, unemployment or the 10-year yield. So even in the comparison the BVAR "won" on every variable, the win is only clearly significant for about half of them.
